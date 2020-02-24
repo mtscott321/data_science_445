@@ -15,12 +15,12 @@ import math
 """
 Define globals
 """
-n = 2
+n = 3
 k = 3
-u = 0.5
+u = 0
 #%%
 """
-Contruct the matrix
+Construct the matrix
 """
 A = np.zeros(shape=(n,n))
 
@@ -34,6 +34,11 @@ for row in range (0, n):
 print(A)
 #np.matrix.transpose(A)
 #%%
+def multiply_three(A, B, C):
+    BC = np.matrix.dot(B, C)
+    ABC = np.matrix.dot(A, BC)
+    return ABC
+
 
 def euclidean_normalized(vt):
     for j in range(0, vt.shape[1]):
@@ -42,7 +47,8 @@ def euclidean_normalized(vt):
             s = s + float(vt[i, j])*float(vt[i, j])
         norm = math.sqrt(np.around(s, 8))
         for i in range(0, vt.shape[0]):
-            vt[i,j] = vt[i,j]/norm
+            if norm != 0:
+                vt[i,j] = vt[i,j]/norm
     return vt
         
             
@@ -59,38 +65,79 @@ def SVD(A):
     #get the eigenvalues and eigenvectors
     vals, vecs = np.linalg.eigh(a_t_a)   
     
-    vals = vals[::-1]
+    print("\nthese are the eignenvecs")
+    print(round_all_vals(vecs, 2))
+    #vals = vals[::-1]
     
-    #sorting the vec array
-    for i in range(0, int(vecs.shape[0]/2)):
-        temp = []
-        #this is stupid but apparently python assigns all arrays by reference not value so temp will change
-        for j in range(0, vecs.shape[1]):
-            temp.append(vecs[i,j])
-        vecs[i,:] = vecs[vecs.shape[0]-i -1, :]
-        vecs[vecs.shape[0]-i -1, :] = temp
-    
-    #this gets rid of an errors from calculating the eigenvalues as very small negative numbers
+    #this gets rid of any errors from calculating the eigenvalues as very small negative numbers
     vals = np.around(vals, 8)
 
-    #computing sigma
+    #computing sigma and V
     sigma = np.zeros((n, n))
     V = np.zeros((n,n))
     for j in range (0, n):
-        sigma[j, j] = math.sqrt(vals[j])
-        V[:,j] = vecs[j]
+        #vals is returned in the reverse order
+        #this assigns the diagonal of sigma as the sqrt of the eigenvals
+        sigma[j, j] = math.sqrt(vals[vals.shape[0] - 1 -j])
+        #vecs is returned in the reverse order
+        #this assigns the columns of V as the eigenvectors
+        V[j,:] = vecs[j][::-1]
+    Ut = np.zeros((n,n))
+    #computing U
+    for j in range(0, n):
+        if sigma[j,j] != 0:
+            Ut[j,:] = (1/sigma[j,j])*np.matrix.dot(A, V[:,j])
 
-    sigV = np.matrix.dot(sigma, V)
-    AsigV = np.matrix.dot(A, sigV)
-    U = euclidean_normalized(AsigV)
+    U_norm = euclidean_normalized(np.matrix.transpose(Ut))
     Vt = np.matrix.transpose(V)
     
-    return U, sigma, Vt
+    return U_norm, sigma, Vt
 
 #%%
+test = np.array([[4, 2, 0],
+                [7, 6, 9],
+                [6, 6, 6]])
+print(test)
+
+A, B, C = SVD(test)
+print("\nThis is U")
+print(A)
+print("\nThis is Sigma")
+print(B)
+print("\nThis is Vt")
+print(C)
+print("\nThis is their product")
+print(round_all_vals(multiply_three(A, B, C), 0))
+
+#%%
+
+test = np.array([[4, 2, 0],
+                [7, 6, 9],
+                [6, 6, 6]])
+print(test)
+
+A, B, C = SVD(test)
+
+Ct = np.matrix.transpose(C)
+U = np.zeros((n,n))
+for j in range(0, n):
+    print(Ct[:,j])
+    
+    print((1/B[j,j])*np.matrix.dot(test, Ct[:,j]))
+
+
+
+
+#%%
+
+
+
+
+
 U, sigma, Vt = SVD(A)
 sigV = np.matrix.dot(sigma, Vt)
 UsigV = np.matrix.dot(U, sigV)
+
 print(A)
 print(round_all_vals(UsigV, 2))
 
@@ -157,19 +204,15 @@ print(A_calc)
 
 
 #%%
-U1, S1, Vt1 = SVD(matA)
+U1, S1, Vt1 = SVD(A)
 
-#print(U1)
-#print(S1)
-#print(Vt1)
+print(round_all_vals(U1, 2))
+
+print(round_all_vals(S1, 2))
+print(round_all_vals(Vt1, 2))
 
 sigV1 = np.matrix.dot(S1, Vt1)
 UsigV1 = np.matrix.dot(U1, sigV1)
-print(round_all_vals(UsigV1, 3))
+#print(round_all_vals(UsigV1, 2))
 #
-print(matA)
-
-
-
-
-#%%
+print(A)
