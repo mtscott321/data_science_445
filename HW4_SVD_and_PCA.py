@@ -17,11 +17,70 @@ Import needed modules
 """
 import numpy as np
 import math
+import random as rd
+from matplotlib import pyplot as plt
+
+#%%
+"""
+Define the array of values for {(xi, yi)}1:m
+"""
+
+np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+
+
+x = []
+y = []
+m = 30
+d = 10
+n = d
+max_mn = m
+min_mn = n
+if n > m:
+    max_mn = n
+    min_mn = m
+
+
+
+A = np.zeros((m, d))
+start = -1
+end = 1
+sig = 0.05
+dx = (end - start)*1.0 /d
+
+def err():
+    return sig * rd.randrange(-1, 1)
+    
+def f(val):
+    return np.around(err() + math.sin(val), 2)
+
+#main code for this section
+prev = start
+for i in range (0, m):
+    prev = prev + dx
+    x.append(np.around(prev, 2))
+    y.append(f(prev))
+    for j in range(0, d):
+        A[i, j] = np.around(prev**j, 2)
+
+#%%
+"""
+Plotting x and y values
+"""
+plt.xlabel("X values")
+plt.ylabel("sin(x) in radians")
+plt.plot(x, y)
+plt.show
+#%%
+U, S, Vt = SVD(A)
+
+print(round_all_vals(S))
+
 
 #%%
 """
 Define A
 """
+
 A = np.matrix([[3, 5, 6, 7],
               [5, 9, 0, 1],
               [6, 6, 6, 4]])
@@ -73,9 +132,10 @@ def SVD(A):
 
     #this gets rid of any errors from calculating the eigenvalues as very small negative numbers
     vals = np.around(vals, 8)
-
+    """
     print("these are the eigenvecs")
     print(round_all_vals(vecs))
+    """
     #computing sigma and V
     sigma = np.zeros((m, n))
     V_temp = np.zeros((n,n))
@@ -88,8 +148,15 @@ def SVD(A):
     for i in range(0, n):
         #vecs is returned in the reverse order
         #this assigns the columns of V as the eigenvectors
-        
-        V_temp[i,:] = vecs[i]
+        temporary = vecs[i]
+        """
+        print("\n\nchecking stuff")
+        print(temporary)
+        print(temporary.shape)
+        print(V_temp[i,:].shape)
+        print(V_temp[i,:])
+        """
+        V_temp[i,:] = temporary
 
     V = np.fliplr(V_temp)
     Ut = np.zeros((m, m))
@@ -121,6 +188,7 @@ print(round_all_vals(multiply_three(Q, B, C), 0))
 
   #  print((1/B[j,j])*np.matrix.dot(test, Ct[:,j]))
 #%%
+"""
 A = np.matrix([[1,2,3],
               [4,5,6]])
 print(A[0])
@@ -130,3 +198,4 @@ print(np.array(A[0])[::-1])
 
 
 print(np.fliplr(A))
+"""
