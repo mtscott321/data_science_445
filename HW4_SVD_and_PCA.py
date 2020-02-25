@@ -72,8 +72,22 @@ plt.plot(x, y)
 plt.show
 #%%
 U, S, Vt = SVD(A)
+y_arr = np.array(y)
+c = np.zeros((1,d))
+for i in range(0, d):
+    ut_b = np.matrix.dot(U[:,i].T, y_arr)
+    ut_b_over_sig = ut_b*1.0 / S[i, i]
+    t = np.array(ut_b_over_sig)
+    term = np.matrix.dot(t, Vt.T[:,i])
+    c = c + term
 
-print(round_all_vals(S))
+print(c)
+
+result = np.dot(A, c.T)
+
+plt.plot(x, result)
+plt.show
+
 
 
 #%%
