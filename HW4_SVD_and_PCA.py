@@ -31,22 +31,24 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
 x = []
 y = []
 m = 30
-d = 10
+d = 4
+r = 30
 n = d
+
+A = np.zeros((m, d))
+
+
 max_mn = m
 min_mn = n
 if n > m:
     max_mn = n
     min_mn = m
-
-
-
-A = np.zeros((m, d))
+    
 start = -1
 end = 1
 sig = 0.05
-dx = (end - start)*1.0 /d
-
+dx = (end - start)*1.0 /m
+    
 def err():
     return sig * rd.randrange(-1, 1)
     
@@ -54,13 +56,16 @@ def f(val):
     return np.around(err() + math.sin(val), 2)
 
 #main code for this section
-prev = start
-for i in range (0, m):
-    prev = prev + dx
-    x.append(np.around(prev, 2))
-    y.append(f(prev))
-    for j in range(0, d):
-        A[i, j] = np.around(prev**j, 2)
+def make_array():
+    prev = start
+    x = []
+    for i in range (0, m):
+        prev = prev + dx
+        x.append(np.around(prev, 2))
+        print(x)
+        y.append(f(prev))
+        for j in range(0, d):
+            A[i, j] = np.around(prev**j, 2)
 
 #%%
 """
@@ -71,16 +76,19 @@ plt.ylabel("sin(x) in radians")
 plt.plot(x, y)
 plt.show
 #%%
-U, S, Vt = SVD(A)
-y_arr = np.array(y)
-c = np.zeros((1,d))
-for i in range(0, d):
-    ut_b = np.matrix.dot(U[:,i].T, y_arr)
-    ut_b_over_sig = ut_b*1.0 / S[i, i]
-    t = np.array(ut_b_over_sig)
-    term = np.matrix.dot(t, Vt.T[:,i])
-    c = c + term
 
+def least_sq():
+    U, S, Vt = SVD(A)
+    y_arr = np.array(y)
+    c = np.zeros((1,d))
+    for i in range(0, d):
+        ut_b = np.matrix.dot(U[:,i].T, y_arr)
+        ut_b_over_sig = ut_b*1.0 / S[i, i]
+        t = np.array(ut_b_over_sig)
+        term = np.matrix.dot(t, Vt.T[:,i])
+        c = c + term
+    return c
+#%%
 print(c)
 
 result = np.dot(A, c.T)
@@ -88,8 +96,22 @@ result = np.dot(A, c.T)
 plt.plot(x, result)
 plt.show
 
+#%%
+"""
+Running the code several times for multiple m values and plotting the mean and std_dev
+"""
+all_errors = []
+for i in range(0, 10):
+     make_array()
+     result = np.dot(A, least_sq().T)       
+     all_errors.append(least_sq_error(x, result)) 
 
-
+#%%
+def least_sq_error(xvals, result):
+    s = 0
+    for i in range(0, m):
+        s = s + (f(xvals[i]) - result[i])**2
+    return s
 #%%
 """
 Define A
