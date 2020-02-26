@@ -59,7 +59,7 @@ def make_array(l = m):
         x.append(np.around(prev, 2))
         y.append(f(prev))
         for j in range(0, d):
-           # A[i, j] = np.around(prev**j, 2)
+            #A[i, j] = np.around(prev**j, 2)
             temp_a[i, j] = np.around(prev**j, 2) 
     return temp_a
 
@@ -179,20 +179,19 @@ def SVD(A):
 """
 Plotting x and y values and least square approx
 """
-"""
+
 plt.figure(figsize=(20, 10))
 
 x = []
 y = []
-make_array()
-result = np.dot(A, least_sq().T)
+temp_a = make_array()
+result = np.dot(temp_a, least_sq().T)
 plt.plot(x, result)
 plt.xlabel("X values")
 plt.ylabel("sin(x) in radians (red), least square fit (blue)")
 plt.plot(x, y, 'ro')
 del result
 plt.show
-"""
 
 #%%
 """
@@ -219,8 +218,7 @@ for lizard in ms:
     stds.append(np.std(all_errors))
 
 plt.figure(figsize = (20, 10))
-#plt.plot(ms, means, 'ro')
+plt.plot(ms, means, 'ro')
 plt.plot(ms, stds, 'go')
 plt.ylabel("Standard deviation in the error")
 plt.xlabel("m value")
-print("The mean value of the error for m = %d is: %.3f and the STD = %0.3f" %(m, mean, std))
