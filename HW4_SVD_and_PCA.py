@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 24 15:31:42 2020
+Madeline Scott
+Mathematical and Computiational Foundations of Data Science
+Homework 4, due 26 Feb 2020
 
-@author: mtsco
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Feb 17 21:03:25 2020
-
-@author: mtsco
+This program computes the least square of a matrix, as well as the least
+squares computation for sin(x) using a Vandermonde matrix.
 """
 #%%
 """
@@ -25,7 +21,7 @@ from matplotlib import pyplot as plt, figure as fig
 """
 Define globals
 """
-
+#this just makes printing arrays nicer
 np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
 
 #globals, X, Y arrays and the matrix
@@ -42,6 +38,9 @@ sig = 0.1
 dx = (end - start)*1.0 /m
 
 #%%
+"""
+Module of needed functions
+"""
 
 #defines the error to be added to each Y value 
 def err():
@@ -78,11 +77,15 @@ def least_sq():
     return c
 
 #based on the least squares result and the real y vals, returns the error
-def least_sq_error(xvals, result):
+def least_sq_error_discrete(xvals, result):
     s = 0
     for i in range(0, m):
         s = s + (f(xvals[i]) - result[i])**2
     return s
+
+#returns the error in the least squares approx for continuously defined functions
+def least_sq_error_cont(xvals, c):
+    
 
 #multiplies three matrices together
 def multiply_three(A, B, C):
@@ -158,19 +161,18 @@ def SVD(A):
 
 #%%
 """
-Plotting x and y values
+Plotting x and y values and least square approx
 """
-plt.xlabel("X values")
-plt.ylabel("sin(x) in radians")
-plt.plot(x, y)
-plt.show
+plt.figure(figsize=(20, 10))
 
-#%%
-print(c)
-
-result = np.dot(A, c.T)
-
+x = []
+y = []
+make_array()
+result = np.dot(A, least_sq().T)
 plt.plot(x, result)
+plt.xlabel("X values")
+plt.ylabel("sin(x) in radians (red), least square fit (blue)")
+plt.plot(x, y, 'ro')
 plt.show
 
 #%%
@@ -184,24 +186,8 @@ for i in range(0, 100):
     y = []
     make_array()
     result = np.dot(A, least_sq().T)       
-    all_errors.append(least_sq_error(x, result)) 
+    all_errors.append(least_sq_error_cont(x, result)) 
 
 mean = np.average(all_errors)
 std = np.std(all_errors)
 print("The mean value of the error for m = %d is: %.3f and the STD = %0.3f" %(m, mean, std))
-
-
-#%%
-
-def test1(A):
-    print(A)
-    
-    Q, B, C = SVD(A)
-    print("\nThis is U")
-    print(Q)
-    print("\nThis is Sigma")
-    print(B)
-    print("\nThis is V")
-    print(C.T)
-    print("\nThis is their product")
-    print(round_all_vals(multiply_three(Q, B, C), 0))
