@@ -23,222 +23,13 @@ import math
 import random as rd
 from matplotlib import pyplot as plt, figure as fig
 from scipy import integrate
-
-#%%
-"""
-Define globals
-"""
-"""
-#this just makes printing arrays nicer
-np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-
-#globals, X, Y arrays and the matrix
-x = []
-y = []
-m = 30
-d = 10
-A = np.zeros((m, d))
-    
-#used to compute the X, Y arrays
-start = -1
-end = 1
-sig = 0.1
-dx = (end - start)*1.0 /m
-"""
-
-#%%
-"""
-Module of needed functions
-"""
-
-#defines the error to be added to each Y value 
-def err():
-    return sig * rd.randrange(-1, 1)
-   
-#the function determining the actual values of the Y array
-def f(v):
-    return np.around(err() + math.sin(v), 2)
-
-#constructing the X and Y arrays based on the function
-def make_array(l = m):
-    temp_a = np.zeros((l, d))
-    prev = start
-    for i in range (0, l):
-        prev = prev + dx
-        x.append(np.around(prev, 2))
-        y.append(f(prev))
-        for j in range(0, d):
-            #A[i, j] = np.around(prev**j, 2)
-            temp_a[i, j] = np.around(prev**j, 2) 
-    return temp_a
-
-#returns the x solution to Ax = b
-def least_sq(mat = A):
-    U, S, Vt = SVD(mat)
-    y_arr = np.array(y)
-    c = np.zeros((1,d))
-    
-    #in steps, calculates the sum of ((uiT*yi)/oi)*vi (this is hard to write without LaTeX)
-    for i in range(0, d):
-        ut_b = np.matrix.dot(U[:,i].T, y_arr)
-        ut_b_over_sig = ut_b*1.0 / S[i, i]
-        t = np.array(ut_b_over_sig)
-        term = np.matrix.dot(t, Vt.T[:,i])
-        c = c + term
-    del y_arr, U, S, Vt
-    return c
-
-#based on the least squares result and the real y vals, returns the error
-def least_sq_error_discrete(xvals, result):
-    s = 0
-    for i in range(0, m):
-        s = s + (f(xvals[i]) - result[i])**2
-    return s
-
-def A_for_x(xval):
-    a_small = np.zeros((1, d))
-    for i in range(0,d):
-        a_small[0, i] = xval**d
-    return a_small
-
-#returns the error in the least squares approx for continuously defined functions
-def least_sq_error_cont(xvals, c, result):
-    def squid(w):
-        q = f(w) - np.matrix.dot(A_for_x(w), result)
-        return q**2
-    val_squared = integrate.quad(lambda w: squid(w), -1, 1)[0]
-    return pow(val_squared, 0.5)
-
-#multiplies three matrices together
-def multiply_three(A, B, C):
-    BC = np.matrix.dot(B, C)
-    ABC = np.matrix.dot(A, BC)
-    del BC
-    return ABC
-
-
-#normalizes a matrix using the Euclidean/L2 norm
-def euclidean_normalized(vt):
-    for j in range(0, vt.shape[1]):
-        s = 0
-        for i in range(0, vt.shape[0]):
-            s = s + float(vt[i, j])*float(vt[i, j])
-        norm = math.sqrt(np.around(s, 8))
-        for i in range(0, vt.shape[0]):
-            if norm != 0:
-                vt[i,j] = vt[i,j]/norm
-    return vt
-        
-#rounds all the values in an array using np.around()
-def round_all_vals(mat, x=2):
-    for i in range(0, mat.shape[0]):
-        for j in range(0, mat.shape[1]):
-            mat[i, j] = np.around(mat[i, j], x)
-    return mat
-
-#calculates the singular value decomposition of matrix A
-def SVD(A):
-    #define useful values
-    n = d
-    min_mn = d
-    if d > m:
-        min_mn = m
-    
-    
-    #get At*A
-    a_t_a = np.dot(np.matrix.transpose(A), A)
-    
-    #get the eigenvalues and eigenvectors
-    vals, vecs = np.linalg.eigh(a_t_a)   
-
-    #this gets rid of any errors from calculating the eigenvalues as very small negative numbers
-    vals = np.around(vals, 8)
-
-    #computing sigma and V
-    sigma = np.zeros((m, n))
-    V_temp = np.zeros((n,n))
-    
-    #making sigma
-    for j in range (0, min_mn):
-        #vals is returned in the reverse order
-        #this assigns the diagonal of sigma as the sqrt of the eigenvals
-        sigma[j, j] = math.sqrt(vals[vals.shape[0] - 1 -j])
-        
-    #making V
-    for i in range(0, n):
-        #vecs is returned in the reverse order
-        #this assigns the columns of V as the eigenvectors
-        temporary = vecs[i]
-        V_temp[i,:] = temporary
-
-    V = np.fliplr(V_temp)
-    Ut = np.zeros((m, m))
-    
-    #computing U
-    for j in range(0, min_mn):
-        if sigma[j,j] != 0:
-            Ut[j,:] = (1/sigma[j,j])*np.matrix.dot(A, V[:,j])
-
-    U_norm = euclidean_normalized(np.matrix.transpose(Ut))
-    Vt = np.matrix.transpose(V)
-    
-    return U_norm, sigma, Vt
-
-#%%
-"""
-Plotting x and y values and least square approx
-"""
-"""
-plt.figure(figsize=(20, 10))
-
-x = []
-y = []
-temp_a = make_array()
-result = np.dot(temp_a, least_sq().T)
-plt.plot(x, result)
-plt.xlabel("X values")
-plt.ylabel("sin(x) in radians (red), least square fit (blue)")
-plt.plot(x, y, 'ro')
-del result
-plt.show
-"""
-
-#%%
-"""
-Running the code several times for multiple m values and plotting the mean and std_dev
-"""
-"""
-all_errors = []
-ms = np.linspace(d+1, 100, 50, dtype= int)
-#i'm running out of variable names so hard right now that im going for animals
-means = []
-stds = []
-for lizard in ms:
-    m = lizard
-    for i in range(0, 40):
-        #have to make x and y empty again
-        x = []
-        y = []
-        A_new = make_array(lizard)
-        lst = least_sq(A_new).T
-        result = np.dot(A_new, lst)
-        all_errors.append(least_sq_error_cont(x, result, lst)) 
-
-    means.append(np.average(all_errors))
-    stds.append(np.std(all_errors))
-
-plt.figure(figsize = (20, 10))
-plt.plot(ms, means, 'ro')
-plt.plot(ms, stds, 'go')
-plt.ylabel("Standard deviation in the error")
-plt.xlabel("m value")
-"""
+from cycler import cycler
 
 #%%
 """
 Generate the gaussian distributions
 """
-D = 10
+D = 2
 m = 5
 n = 50
 k = 2
@@ -246,7 +37,7 @@ k = 2
 temp = np.zeros(D)
 temp[0] = m
 
-g1 = np.random.multivariate_normal(np.zeros(D), np.identity(D), size=10)
+g1 = np.random.multivariate_normal(np.zeros(D), np.identity(D), size=100)
 g2 = np.random.multivariate_normal(temp, np.identity(D), size=100)
 
 del temp
@@ -272,40 +63,36 @@ for i in range(0, n):
 
 #now we're going to start doing the k-means
 #pick the first middle points randomly from the set
-#%%
-print(selected[40][0][0])
-        
+
 #%%
 
 #now find the ideal way to split the selected values to minimize distance
-def clusters_from_ms(ms):
-    error = 0
+def clusters_from_ms(means):
     new_clusters = {}
+    error = 0
     for x in selected:
         mindist = [-1, -1]
-        for i in range(0, len(ms)):
-            dist = np.linalg.norm(x[0][0]-ms[i])
-            error = error + dist
+        for i in range(0, len(means)):
+            dist = np.linalg.norm(x[0][0]-means[i])
             if mindist[0] < 0 or mindist[0] > dist:
                 #keeping track of the smallest distance and which cluster that was a part of
                 mindist[0] = dist
                 mindist[1] = i
+        error = error  + mindist[0]
         if mindist[1] not in new_clusters:
             new_clusters[mindist[1]] = []
         new_clusters[mindist[1]].append(x[0][0])
     return new_clusters, error
             
 
-
-#%%
-def ms_from_clusters(c):
+def ms_from_clusters(clus):
     ms = []
     #for each label
-    for i in c:
+    for i in clus:
         #for each x corresponding to each label
         s = 0
         num = 0
-        for j in c[i]:
+        for j in clus[i]:
             s = s + j
             num = num + 1
         #don't have to worry about divide by zero bc each has at least 1
@@ -315,37 +102,206 @@ def ms_from_clusters(c):
 
 
 
-ms = []
+def graph_the_points(clus, means):
+    plt.figure(figsize=(20, 10))
+    #this will iterate so each cluser gets a diff color up until four clusters lol
+    plt.rc(cycler('color', ['co', 'mo', 'yo', 'ko']))
+    #plot the x and y values
+    for i in clus:
+        plt.plot(np.stack(clus[i])[:,0], np.stack(clus[i])[:,1], marker = 'o')
+    #now plot the means
+    for m in means:
+        plt.plot(m[0], m[1], 'g^')
+    
+    plt.show
+    
+    #%%
+    
+    
+    
+all_means = []
 js = np.random.choice(len(selected), k, replace = False)
 for i in range (0, k):
     #all the indices are because the arrays are stored as 2d 1xn arrays rather than 1D
-    ms.append(selected[js[i]][0][0])
-c, error = clusters_from_ms(ms)
-while err > 5:
+    all_means.append(selected[js[i]][0][0])
+c, error = clusters_from_ms(all_means)
+iterations = 0
+
+#keeping track of iterations to prevent it from just not settling ever
+while error > 0.5 and iterations < 1000:
     ms = ms_from_clusters(c)
     c, error = clusters_from_ms(ms)
-
-print("done bitch")
+    iterations = iterations + 1
     
-
-            
-        
-        
-        
-        
     
+    print(error)
 
 #%%
+graph_the_points(c, ms)
+
+#%%
+"""
+Now that we have clusters, we need to find out which one corresponds to which of the actual values
+"""
+tracking = {}
+if np.linalg.norm(ms[0]) < np.linalg.norm(ms[1]):
+    tracking[0] = 1
+    tracking[1] = 0
+else: 
+    tracking[0] = 0
+    tracking[1] = 1
+
+#%%
+#for each x value in each bin of c
+        #check to see if that assignment is the same as the assignment in selected
+        
+corr = 0
+wrong = 0
+for value in selected:
+    
+    x = value[0][0]
+    bin_ = value[1]
+    same = True
+    for i in range(0, len(c[tracking[bin_]][0])):
+        if c[tracking[bin_]][0][i] != x[i]:
+            same = False
+    if same:
+        wrong = wrong + 1
+    else:
+        corr = corr + 1
+#%%
+print(wrong)
+print(corr)
+        
+#%%
+
+total_error = wrong*1.0 / n
+
+#%%
+"""
+now we're gonna do the whole thing but with a lot of different n values
+"""
+ns = []
+tot_errs = []
+for n in range(4, 100):
+    D = 2
+    m = 5
+    
+    k = 2
+    
+    temp = np.zeros(D)
+    temp[0] = m
+    
+    g1 = np.random.multivariate_normal(np.zeros(D), np.identity(D), size=100)
+    g2 = np.random.multivariate_normal(temp, np.identity(D), size=100)
+    
+    del temp
+    
+    p1 = 0.5
+    p2 = 1 - p1
+    
+    #selected is the data set of the n many selected values from both of the arrays
+    selected = []
+    
+    #certain there is a better way to do this but I don't know what it is
+    #selecting the values from the Gaussians at the probabilities given
+    for i in range(0, n):
+        l = np.random.choice([0, 1], p = [p1, p2])
+        if l == 0:
+            #should the selection have replacement or not? 
+            #I did with replacement, but I'm not sure which is correct
+            index = np.random.choice(g1.shape[0], 1)
+            selected.append([g1[index], 0])
+        else:
+            index = np.random.choice(g2.shape[0], 1)
+            selected.append([g2[index], 1])
+            
+    
+    all_means = []
+    js = np.random.choice(len(selected), k, replace = False)
+    for i in range (0, k):
+        #all the indices are because the arrays are stored as 2d 1xn arrays rather than 1D
+        all_means.append(selected[js[i]][0][0])
+    c, error = clusters_from_ms(all_means)
+    iterations = 0
+    
+    #keeping track of iterations to prevent it from just not settling ever
+    while error > 0.5 and iterations < 1000:
+        ms = ms_from_clusters(c)
+        c, error = clusters_from_ms(ms)
+        iterations = iterations + 1
+    tracking = {}
+    if np.linalg.norm(ms[0]) < np.linalg.norm(ms[1]):
+        tracking[0] = 1
+        tracking[1] = 0
+    else: 
+        tracking[0] = 0
+        tracking[1] = 1
+    
+    corr = 0
+    wrong = 0
+    for value in selected:
+        
+        x = value[0][0]
+        bin_ = value[1]
+        same = True
+        for i in range(0, len(c[tracking[bin_]][0])):
+            if c[tracking[bin_]][0][i] != x[i]:
+                same = False
+        if same:
+            wrong = wrong + 1
+        else:
+            corr = corr + 1
+    
+    total_error = wrong*1.0 / n
+    
+    ns.append(n)
+    tot_errs.append(total_error)
+
+#%%
+plt.plot(ns, tot_errs)
+plt.xlabel("N values")
+plt.ylabel("Percent error")
+    
+    
+    
+        
+#%%
+
+    
+#%%
+"""
+print(c)
+print("n\n\n\n\n\n")
+print(all_means)
+graph_the_points(c, all_means)
+
+
+
+tempms = ms_from_clusters(c)
+
+c1, errorororor = clusters_from_ms(tempms)
+
+graph_the_points(c1, tempms)
+
+print(c)
+print("\n\n\n\n\n")
+print(c1)
+
+
 
         
-        
-        
+plt.figure(figsize=(20, 10))
+xvals = g1[:,0]
+print(xvals)
+plt.plot(xvals, g1[:,1], 'ro')
+plt.plot(g2[:,0], g2[:,1], 'go')
+plt.show
 
 
 
 
-
-
+"""
 
 
 
