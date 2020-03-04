@@ -241,6 +241,7 @@ Generate the gaussian distributions
 D = 10
 m = 5
 n = 50
+k = 2
 
 temp = np.zeros(D)
 temp[0] = m
@@ -259,21 +260,86 @@ selected = []
 #certain there is a better way to do this but I don't know what it is
 #selecting the values from the Gaussians at the probabilities given
 for i in range(0, n):
-    l = np.random.choice([1, 2], p = [p1, p2])
-    if l == 1:
+    l = np.random.choice([0, 1], p = [p1, p2])
+    if l == 0:
         #should the selection have replacement or not? 
         #I did with replacement, but I'm not sure which is correct
         index = np.random.choice(g1.shape[0], 1)
-        selected.append([g1[index], 1])
+        selected.append([g1[index], 0])
     else:
         index = np.random.choice(g2.shape[0], 1)
-        selected.append([g2[index], 2])
+        selected.append([g2[index], 1])
+
+#now we're going to start doing the k-means
+#pick the first middle points randomly from the set
+#%%
+print(selected[40][0][0])
+        
+#%%
+
+#now find the ideal way to split the selected values to minimize distance
+def clusters_from_ms(ms):
+    error = 0
+    new_clusters = {}
+    for x in selected:
+        mindist = [-1, -1]
+        for i in range(0, len(ms)):
+            dist = np.linalg.norm(x[0][0]-ms[i])
+            error = error + dist
+            if mindist[0] < 0 or mindist[0] > dist:
+                #keeping track of the smallest distance and which cluster that was a part of
+                mindist[0] = dist
+                mindist[1] = i
+        if mindist[1] not in new_clusters:
+            new_clusters[mindist[1]] = []
+        new_clusters[mindist[1]].append(x[0][0])
+    return new_clusters, error
+            
+
+
+#%%
+def ms_from_clusters(c):
+    ms = []
+    #for each label
+    for i in c:
+        #for each x corresponding to each label
+        s = 0
+        num = 0
+        for j in c[i]:
+            s = s + j
+            num = num + 1
+        #don't have to worry about divide by zero bc each has at least 1
+        avg = s / num
+        ms.append(avg)
+    return ms
+
+
+
+ms = []
+js = np.random.choice(len(selected), k, replace = False)
+for i in range (0, k):
+    #all the indices are because the arrays are stored as 2d 1xn arrays rather than 1D
+    ms.append(selected[js[i]][0][0])
+c, error = clusters_from_ms(ms)
+while err > 5:
+    ms = ms_from_clusters(c)
+    c, error = clusters_from_ms(ms)
+
+print("done bitch")
+    
+
+            
+        
+        
+        
+        
+    
 
 #%%
 
         
-    
-    
+        
+        
 
 
 
