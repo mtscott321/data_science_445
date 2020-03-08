@@ -14,6 +14,7 @@ Homework 4, due 26 Feb 2020
 This program computes the least square of a matrix, as well as the least
 squares computation for sin(x) using a Vandermonde matrix.
 """
+
 #%%
 """
 Import needed modules
@@ -26,46 +27,6 @@ from scipy import integrate
 from cycler import cycler
 
 #%%
-"""
-Generate the gaussian distributions
-"""
-D = 2
-m = 5
-n = 50
-k = 2
-
-temp = np.zeros(D)
-temp[0] = m
-
-g1 = np.random.multivariate_normal(np.zeros(D), np.identity(D), size=100)
-g2 = np.random.multivariate_normal(temp, np.identity(D), size=100)
-
-del temp
-
-p1 = 0.5
-p2 = 1 - p1
-
-#selected is the data set of the n many selected values from both of the arrays
-selected = []
-
-#certain there is a better way to do this but I don't know what it is
-#selecting the values from the Gaussians at the probabilities given
-for i in range(0, n):
-    l = np.random.choice([0, 1], p = [p1, p2])
-    if l == 0:
-        #should the selection have replacement or not? 
-        #I did with replacement, but I'm not sure which is correct
-        index = np.random.choice(g1.shape[0], 1)
-        selected.append([g1[index], 0])
-    else:
-        index = np.random.choice(g2.shape[0], 1)
-        selected.append([g2[index], 1])
-
-#now we're going to start doing the k-means
-#pick the first middle points randomly from the set
-
-#%%
-
 #now find the ideal way to split the selected values to minimize distance
 def clusters_from_ms(means):
     new_clusters = {}
@@ -86,7 +47,7 @@ def clusters_from_ms(means):
             
 
 def ms_from_clusters(clus):
-    ms = []
+    means = []
     #for each label
     for i in clus:
         #for each x corresponding to each label
@@ -97,8 +58,8 @@ def ms_from_clusters(clus):
             num = num + 1
         #don't have to worry about divide by zero bc each has at least 1
         avg = s / num
-        ms.append(avg)
-    return ms
+        means.append(avg)
+    return means
 
 
 
@@ -114,30 +75,70 @@ def graph_the_points(clus, means):
         plt.plot(m[0], m[1], 'g^')
     
     plt.show
-    
-    #%%
-    
-    
-    
-all_means = []
-js = np.random.choice(len(selected), k, replace = False)
-for i in range (0, k):
-    #all the indices are because the arrays are stored as 2d 1xn arrays rather than 1D
-    all_means.append(selected[js[i]][0][0])
-c, error = clusters_from_ms(all_means)
+
+def randomly_choose(selected):
+    means = np.random.choice(np.asarrar(selected), k, replace = False)
+    return means
+
+#%%
+"""
+Generate the gaussian distributions
+"""
+D = 14
+m = 5
+n = 500
+k = 2
+
+temp = np.zeros(D)
+temp[0] = m
+
+g1 = np.random.multivariate_normal(np.zeros(D), np.identity(D), size=100)
+g2 = np.random.multivariate_normal(temp, np.identity(D), size=100)
+
+del temp
+
+p1 = 0.5
+p2 = 1 - p1
+
+#selected is the data set of the n many selected values from both of the arrays
+#s is a python list of lists, each of which contains [0]: np.array(D) and [1]: index in the form of an integer 0 to k
+s = []
+
+#certain there is a better way to do this but I don't know what it is
+#selecting the values from the Gaussians at the probabilities given
+for i in range(0, n):
+    l = np.random.choice([0, 1], p = [p1, p2])
+    if l == 0:
+        #should the selection have replacement or not? 
+        #I did with replacement, but I'm not sure which is correct
+        index = np.random.choice(g1.shape[0], 1)
+        s.append([g1[index], 0])
+    else:
+        index = np.random.choice(g2.shape[0], 1)
+        s.append([g2[index], 1])
+
+#%%
+        """This is the big leap from old to new """
+        
+#now we're going to start doing the k-means
+#pick the first middle points randomly from the set
+        
+c, erroror = clusters_from_ms(s)
 iterations = 0
 
 #keeping track of iterations to prevent it from just not settling ever
-while error > 0.5 and iterations < 1000:
+while erroror > 0.5 and iterations < 25:
     ms = ms_from_clusters(c)
-    c, error = clusters_from_ms(ms)
+    c, erroror = clusters_from_ms(ms)
     iterations = iterations + 1
-    
-    
-    print(error)
+    print(erroror)
 
-#%%
-graph_the_points(c, ms)
+#now we're going to assign the original clusters to the new clusters (organized by indicies in their respective arrays)
+old_2_new = {}
+for i in range(0, 7):
+    #the key represents the index in the 
+
+
 
 #%%
 """
@@ -150,6 +151,11 @@ if np.linalg.norm(ms[0]) < np.linalg.norm(ms[1]):
 else: 
     tracking[0] = 0
     tracking[1] = 1
+    
+    
+    
+#%%
+    
 
 #%%
 #for each x value in each bin of c
@@ -184,7 +190,7 @@ now we're gonna do the whole thing but with a lot of different n values
 ns = []
 tot_errs = []
 for n in range(4, 100):
-    D = 2
+    D = 8
     m = 5
     
     k = 2
@@ -264,13 +270,26 @@ plt.xlabel("N values")
 plt.ylabel("Percent error")
     
     
-    
-        
 #%%
+all_means = []
+js = np.random.choice(len(selected), k, replace = False)
+for i in range (0, k):
+    #all the indices are because the arrays are stored as 2d 1xn arrays rather than 1D
+    all_means.append(selected[js[i]][0][0])
+#%%
+c, erroror = clusters_from_ms(all_means)
+ms = ms_from_clusters(c)
+print(erroror)
+#%%
+
+
+c, erroror = clusters_from_ms(ms)
+ms = ms_from_clusters(c)
+print(erroror)
 
     
 #%%
-"""
+
 print(c)
 print("n\n\n\n\n\n")
 print(all_means)
@@ -297,13 +316,4 @@ print(xvals)
 plt.plot(xvals, g1[:,1], 'ro')
 plt.plot(g2[:,0], g2[:,1], 'go')
 plt.show
-
-
-
-
-"""
-
-
-
-
 
