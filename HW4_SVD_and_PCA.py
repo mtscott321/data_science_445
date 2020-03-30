@@ -38,6 +38,9 @@ sig = 0.1
 dx = (end - start)*1.0 /m
 
 #%%
+print(A.shape);
+
+#%%
 """
 Module of needed functions
 """
@@ -222,3 +225,6 @@ plt.plot(ms, means, 'ro')
 plt.plot(ms, stds, 'go')
 plt.ylabel("Standard deviation in the error")
 plt.xlabel("m value")
+#%%
+A = make_array(12)
+print(A)
