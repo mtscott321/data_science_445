@@ -6,6 +6,8 @@ Created on Sun Mar 29 16:33:54 2020
 """
 import math
 import numpy as np
+import statistics
+import scipy
 
 def round_all_vals(mat, x=2):
     for i in range(0, mat.shape[0]):
@@ -90,13 +92,34 @@ def normal_stnd_dist_mat(D, n):
     return normal_dist_mat(D, n, sig = np.ones([n]), mus = np.zeros([n]))
 
 """
+clus will be a 1xn np array, where each clus[i] is the label of the cluster that the ith data point
+will belong to. Example: clus[4] = 2, so the 4th data point A[:, 4] will be drawn from cluster #4.
+sigma is a Dxk array (where k is the number of clusters), where each sigma[i, j] is the stddev in the ith dimension for the jth cluster
+mus is a Dxk (where k is the number of clusters) array where each column is the average value of that cluster
+"""
+def fancy_normal(D, n, sig, mus, clus):
+    A = np.zeros((D, n))
+    #picking n points
+    for i in range(0, n):
+        j = int(clus[i])
+        #randomly choosing a D-dim vector from a D-dim normal dist
+        #then scaling by the stddev of each dim after shifting to the cluster average
+        x = np.dot(sig[:, j].T, np.random.randn(D) - mus[:, j])
+        A[:, i] = x
+    return A
+
+def fancy_from_probs(D, n, sig, mus, probs):
+    clus = pick_clusters(probs, n)
+    return fancy_normal(D, n, sig, mus, clus), clus
+
+"""
 n many times, picks a cluster from the prob.size posibilities, with each ith 
 cluster having a probability of prob[i] of being picked. Returns an array of the 
 selected clusters (starting at 0, where cluster 0 is picked with prob[0], etc)
 """
 def pick_clusters(prob, n = 1):
     clus = np.zeros(n)
-    choices = np.zeros(prob.size)
+    choices = np.zeros(len(prob))
     for i in range(0, choices.size):
         choices[i] = i
     for i in range(0, n):
@@ -109,28 +132,72 @@ matrix and the emp_mean
 """
 def center_mat(A):
     m = np.zeros(A.shape[0])
-    for col in range(0, A.shape[1] - 1):
+    for col in range(0, A.shape[1]):
         m = m + A[:, col]
     if A.shape[1] != 0:
         m = m / A.shape[1]
-    for col in range(0, A.shape[1] - 1):
+    for col in range(0, A.shape[1]):
         A[:, col] = A[:, col] - m
     return A, m
 
 """
-Calculates and returns the empirical variance of a matrix
+Calculates and returns the empirical variance of a matrix. Inputs should be a matrix, 
+and the k value for the PCA
 """
-def emp_variance(A, m):
+def emp_variance(A, k, center = True):
+    cA, trash = center_mat(A)
+    U, sig, Vt = SVD(cA)
+    Uk = U[:, k-1]
+    Z = []
+    for col in range(0, cA.shape[1]):
+        cAi = cA[:, col]
+        dot = np.dot(cAi, Uk)
+        Z.append(dot)
+    m = statistics.mean(Z)
     s = 0
-    for col in range(0, A.shape[1] -1):
-        Ai = A[:, col]
-        Aibar = Ai - m
-        Aibar_Aibar = np.multiply(Aibar, Aibar.T)
-        for j in range(0, A.shape[0] - 1):
-            s = s + Aibar_Aibar[j]
-    var = 0
-    if A.shape[1] > 0:
-        var = s/(A.shape[0] - 1)
+    for i in range(0, cA.shape[1]):
+        temp = Z[i] - m
+        s = s + temp*temp
+    var = -1
+    #this should always happen, but need to avoid divide by zero
+    if A.shape[1] > 1:
+        var = s/(A.shape[1] - 1)
     return var
+
+"""
+Projects matrix A into a k-dimensional subspace with principal component
+basis. Returns the projected matrix.
+"""
+def PCA(A, k, center = True):
+    cA, trash = center_mat(A)
+    U, sig, Vt = SVD(cA)
+    for i in range(k, cA.shape[0]):
+        U[:, i] = 0
+    projA = np.dot(U.T, cA)
+    return projA, U
+
+def PCA_error(A, k):
+    cA, trash = center_mat(A)
+    projA, U = PCA(A, k)
+    s = 0
+    for col in range(0, cA.shape[1]):
+        temp = cA[:, col] - np.dot(np.dot(U, U.T), cA[:, col])
+        s = s + (np.linalg.norm(temp))**2
+    err = 0
+    if cA.shape[1] > 0:
+        err = s / cA.shape[1]
+    return err
+        
+def L2_norm(f, a, b):
+    integral = L2_dp(f, f, a, b)
+    return math.sqrt(integral)
+
+def L2_dp(f, g, a, b):
+    integral, err = scipy.integrate.quad(lambda x: f(x)*g(x), a, b)
+    return integral
+
+    
+    
+    
     
     
