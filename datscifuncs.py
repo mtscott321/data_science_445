@@ -104,8 +104,11 @@ def fancy_normal(D, n, sig, mus, clus):
         j = int(clus[i])
         #randomly choosing a D-dim vector from a D-dim normal dist
         #then scaling by the stddev of each dim after shifting to the cluster average
-        x = np.dot(sig[:, j].T, np.random.randn(D) - mus[:, j])
-        A[:, i] = x
+        centered = np.random.randn(D) - mus[:, j]
+        for k in range(0, D):
+            centered[k] = sig[k, j] * centered[k]
+        
+        A[:, i] = centered
     return A
 
 def fancy_from_probs(D, n, sig, mus, probs):
@@ -196,7 +199,98 @@ def L2_dp(f, g, a, b):
     integral, err = scipy.integrate.quad(lambda x: f(x)*g(x), a, b)
     return integral
 
+"""
+K-means functions below
+"""
     
+    #now find the ideal way to split the selected values to minimize distance
+def clusters_from_ms(means, selected):
+    new_clusters = {}
+    error = 0
+    for x in selected:
+        mindist = [-1, -1]
+        for i in range(0, len(means)):
+            dist = np.linalg.norm(x[0][0]-means[i])
+            if mindist[0] < 0 or mindist[0] > dist:
+                #keeping track of the smallest distance and which cluster that was a part of
+                mindist[0] = dist
+                mindist[1] = i
+        error = error  + mindist[0]
+        if mindist[1] not in new_clusters:
+            new_clusters[mindist[1]] = []
+        new_clusters[mindist[1]].append(x[0][0])
+    return new_clusters, error
+            
+"""
+clus_centers is a Dxk matrix where k is the number of clusters. Each jth column is the mean 
+value for the jth cluster
+data is a Dxn matrix where each ith column is the ith data point. 
+new clusters is a 1xn matrix where clus[i] = the cluster to which the ith data point has been assigned.
+The value will indicate the column of clus_centers.
+"""
+def choose_clusters(clus_centers, data):
+    n = data.shape[1]
+    k = clus_centers.shape[1]
+    new_clus = np.zeros(n)
+    for i in range(0, n):
+        curr_clus = -1
+        min_dist = -1
+        for j in range(0, k):
+            curr_dist = np.linalg.norm(data[:, i] - clus_centers[:, j])
+            if curr_dist < min_dist or min_dist < 0:
+                min_dist = curr_dist
+                curr_clus = j
+        new_clus[i] = curr_clus
+    return new_clus
+
+"""
+clusters is a 1xn array where the ith value is the cluster to which the ith data 
+point belongs.
+data is a Dxn matrix where each ith column is the ith data point. 
+"""
+def calculate_means(clusters, data, k):
+    D = data.shape[0]
+    n = data.shape[1]
+    clus_centers = np.zeros((D, k))
+    #for each cluster
+    for i in range(0, k):
+        cluster_sum = np.zeros(D)
+        sum_num = 0
+        #check to see if the ith data is in the cluster, and if it is add to sum
+        for j in range(0, n):
+            if clusters[j] == i:
+                cluster_sum = cluster_sum + data[:, j]
+                sum_num  = sum_num + 1
+        clus_centers[:, i] = cluster_sum / sum_num
+    return clus_centers
+
+def k_means_err_perc(selected_clus, actual_clus, n):
+    incorr = 0
+    for i in range(0, n):
+        if selected_clus[i] != actual_clus[i]:
+            incorr = incorr + 1
+    perc_err  = 1.0*incorr/n
+    return perc_err
+        
+
+def k_means_err(data, selected_clus, clus_centers):
+    n = data.shape[1]
+    k = clus_centers.shape[1]
+    err_sum = 0
+    for i in range(0, k):
+        for j in range(0, n):
+            if selected_clus[j] == i:
+                dist = np.linalg.norm(data[:, j] - clus_centers[:, i])
+                err_sum = err_sum + dist**2
+    return err_sum
+
+def choose_first_clus(data, k):
+    n = data.shape[1]
+    clusters = np.zeros(n)
+    for i in range(0, n):
+        clusters[i] = np.random.randint(k+1)
+    return clusters
+        
     
     
     
